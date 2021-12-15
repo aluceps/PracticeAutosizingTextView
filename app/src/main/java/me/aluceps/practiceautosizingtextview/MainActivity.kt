@@ -11,12 +11,23 @@ class MainActivity : AppCompatActivity() {
     }
 
     private val currentValue = MutableLiveData<Float>()
+    private var screenSize = 0
     private var originalSize1 = 0
     private var originalSize2 = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
+        setupView()
+        observe()
+    }
+
+    private fun setupView() {
+        binding.root.viewTreeObserver.addOnGlobalLayoutListener {
+            if (screenSize == 0) {
+                screenSize = binding.root.width
+            }
+        }
         binding.textView1.viewTreeObserver.addOnGlobalLayoutListener {
             if (originalSize1 == 0) {
                 originalSize1 = binding.textView1.width
@@ -27,23 +38,26 @@ class MainActivity : AppCompatActivity() {
                 originalSize2 = binding.container.width
             }
         }
-        setupView()
-        observe()
-    }
-
-    private fun setupView() {
         binding.slider.addOnChangeListener { _, value, _ ->
-            currentValue.postValue(value * 10)
+            currentValue.postValue((value + 0.1f) * 2f)
         }
     }
 
     private fun observe() {
         currentValue.observe(this) {
             if (it == null) return@observe
-            binding.textView1.layoutParams.width = (originalSize1 * it).toInt()
-            binding.textView1.requestLayout()
-            binding.container.layoutParams.width = (originalSize2 * it).toInt()
-            binding.container.requestLayout()
+            (originalSize1 * it).toInt().let {
+                if (screenSize >= it) {
+                    binding.textView1.layoutParams.width = it
+                    binding.textView1.requestLayout()
+                }
+            }
+            (originalSize2 * it).toInt().let {
+                if (screenSize >= it) {
+                    binding.container.layoutParams.width = it
+                    binding.container.requestLayout()
+                }
+            }
         }
     }
 }
